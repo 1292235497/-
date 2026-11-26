@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ماربازی حرفه‌ای | Marble Master</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b1026; --panel:rgba(18,24,54,.94); --panel2:rgba(28,36,76,.9);
+  --line:rgba(120,150,255,.28); --acc:#38e1ff; --acc2:#7c5cff;
+  --gold:#ffd34d; --red:#ff5d7a; --green:#3dff9e; --txt:#eaf2ff; --mut:#9fb3d9;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  font-family:'Vazirmatn',Tahoma,sans-serif;color:var(--txt);min-height:100vh;
+  background:radial-gradient(1200px 700px at 50% -10%,#1d2854,#0b1026 62%) fixed;
+  display:flex;flex-direction:column;align-items:center;padding:14px 12px 26px;overflow-x:hidden;
+}
+h1.logo{font-size:clamp(26px,5vw,42px);font-weight:900;letter-spacing:.5px;margin:6px 0 2px;
+  background:linear-gradient(90deg,var(--acc),var(--acc2),var(--gold));-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 3px 12px rgba(56,225,255,.35));}
+.sub{color:var(--mut);font-size:14px;margin-bottom:12px}
+#wrap{width:min(960px,96vw)}
+#stage{position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--line);
+  box-shadow:0 20px 60px rgba(0,0,0,.55),0 0 0 6px rgba(20,27,61,.5),0 0 40px rgba(124,92,255,.15);
+  aspect-ratio:3/2;background:#0b1026}
+canvas#game{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+/* ---------- HUD ---------- */
+#hud{position:absolute;top:0;right:0;left:0;display:none;justify-content:space-between;align-items:center;
+  padding:8px 10px;gap:6px;pointer-events:none;z-index:5;flex-wrap:wrap}
+#hud .grp{display:flex;gap:6px;align-items:center;pointer-events:auto}
+.chip{background:rgba(10,14,34,.78);border:1px solid var(--line);border-radius:999px;
+  padding:5px 12px;font-size:13px;font-weight:700;backdrop-filter:blur(4px);white-space:nowrap}
+.chip b{color:var(--acc)}
+.chip.gold b{color:var(--gold)}
+.iconbtn{pointer-events:auto;background:rgba(10,14,34,.78);border:1px solid var(--line);color:var(--txt);
+  width:36px;height:36px;border-radius:12px;font-size:17px;cursor:pointer;transition:.15s}
+.iconbtn:hover{background:rgba(56,225,255,.18);transform:translateY(-1px)}
+/* ---------- Overlays ---------- */
+.overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:10;
+  background:rgba(6,9,24,.72);backdrop-filter:blur(6px);padding:14px;overflow-y:auto}
+.overlay.show{display:flex}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px 20px;
+  width:min(560px,94%);max-height:100%;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.6);
+  animation:pop .25s ease}
+@keyframes pop{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+.card h2{font-size:24px;font-weight:900;margin-bottom:4px;text-align:center}
+.card .desc{color:var(--mut);text-align:center;font-size:13px;margin-bottom:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;
+  font-family:inherit;font-weight:800;font-size:15px;border-radius:14px;padding:12px 18px;color:#08122b;
+  background:linear-gradient(135deg,var(--acc),#6ef3ff);box-shadow:0 8px 22px rgba(56,225,255,.35);transition:.15s;width:100%}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(56,225,255,.45)}
+.btn:active{transform:translateY(0)}
+.btn.violet{background:linear-gradient(135deg,var(--acc2),#a78bff);color:#fff;box-shadow:0 8px 22px rgba(124,92,255,.4)}
+.btn.gold{background:linear-gradient(135deg,var(--gold),#ffb347);box-shadow:0 8px 22px rgba(255,211,77,.35)}
+.btn.ghost{background:rgba(120,150,255,.12);color:var(--txt);border:1px solid var(--line);box-shadow:none}
+.btn.danger{background:linear-gradient(135deg,var(--red),#ff8fa3);color:#fff}
+.btnrow{display:flex;gap:10px;margin-top:10px}
+.btnrow .btn{flex:1}
+.field{margin:12px 0}
+.field label{display:block;font-size:13px;color:var(--mut);margin-bottom:6px;font-weight:700}
+.field input{width:100%;background:rgba(8,12,30,.8);border:1px solid var(--line);border-radius:12px;
+  color:var(--txt);padding:11px 14px;font-family:inherit;font-size:15px;outline:none}
+.field input:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(56,225,255,.2)}
+.avatars{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.avatars button{font-size:22px;background:rgba(120,150,255,.1);border:2px solid transparent;border-radius:12px;
+  width:44px;height:44px;cursor:pointer;transition:.15s}
+.avatars button.sel{border-color:var(--acc);background:rgba(56,225,255,.18);transform:scale(1.08)}
+.statsline{display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin:10px 0 4px;font-size:13px;color:var(--mut)}
+.statsline b{color:var(--gold)}
+/* level grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.lvl{background:var(--panel2);border:1px solid var(--line);border-radius:16px;padding:14px 12px;cursor:pointer;
+  transition:.15s;text-align:center;position:relative}
+.lvl:hover{transform:translateY(-3px);border-color:var(--acc)}
+.lvl .num{font-size:26px;font-weight:900;color:var(--acc)}
+.lvl .nm{font-weight:800;font-size:14px;margin:2px 0}
+.lvl .meta{font-size:11px;color:var(--mut);line-height:1.7}
+.lvl .meta b{color:var(--gold)}
+.lvl.locked{opacity:.45;cursor:not-allowed}
+.lvl.locked:hover{transform:none;border-color:var(--line)}
+.lvl .lock{position:absolute;top:8px;left:10px;font-size:16px}
+.lvl .done{position:absolute;top:8px;left:10px;font-size:16px;color:var(--green)}
+/* records */
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tabs button{flex:1;background:rgba(120,150,255,.1);border:1px solid var(--line);color:var(--txt);
+  border-radius:12px;padding:9px 4px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer}
+.tabs button.sel{background:linear-gradient(135deg,var(--acc2),#a78bff);color:#fff;border-color:transparent}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 6px;text-align:center;border-bottom:1px solid rgba(120,150,255,.15)}
+th{color:var(--mut);font-size:12px}
+tr.me td{background:rgba(56,225,255,.08)}
+.rank{font-weight:900;color:var(--gold)}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+.stat .v{font-size:22px;font-weight:900;color:var(--acc)}
+.stat .k{font-size:12px;color:var(--mut);margin-top:2px}
+.empty{text-align:center;color:var(--mut);padding:22px 0;font-size:14px}
+.help-list{font-size:14px;line-height:2.1;color:var(--txt)}
+.help-list kbd{background:rgba(120,150,255,.18);border:1px solid var(--line);border-radius:6px;padding:1px 8px;font-family:inherit;font-size:12px}
+.breakdown{background:rgba(8,12,30,.6);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin:12px 0;font-size:14px}
+.breakdown div{display:flex;justify-content:space-between;padding:4px 0}
+.breakdown .tot{border-top:1px dashed var(--line);margin-top:6px;padding-top:8px;font-weight:900;font-size:17px}
+.breakdown .tot b{color:var(--gold)}
+.badge{display:inline-block;background:linear-gradient(135deg,var(--gold),#ffb347);color:#08122b;font-weight:900;
+  border-radius:999px;padding:3px 14px;font-size:12px;margin:4px 0}
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--panel);
+  border:1px solid var(--acc);color:var(--txt);padding:11px 22px;border-radius:999px;font-weight:800;font-size:14px;
+  transition:.3s;z-index:99;box-shadow:0 10px 30px rgba(0,0,0,.5);opacity:0;pointer-events:none}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+.hint{text-align:center;color:var(--mut);font-size:12.5px;margin-top:10px;line-height:1.9}
+.hint kbd{background:rgba(120,150,255,.15);border:1px solid var(--line);border-radius:6px;padding:0 7px;font-family:inherit}
+@media (max-width:560px){ .chip{font-size:11px;padding:4px 9px} .iconbtn{width:32px;height:32px} }
+</style>
+</head>
+<body>
+
+<h1 class="logo">🎱 ماربازی حرفه‌ای</h1>
+<div class="sub">Marble Master — گوی را به مقصد برسان، سکه جمع کن، رکورد بزن!</div>
+
+<div id="wrap">
+  <div id="stage">
+    <canvas id="game"></canvas>
+
+    <!-- HUD -->
+    <div id="hud">
+      <div class="grp">
+        <span class="chip" id="hudLevel">مرحله ۱</span>
+        <span class="chip">⏱ <b id="hudTime">۰۰:۰۰</b></span>
+        <span class="chip">⭐ <b id="hudScore">۰</b></span>
+        <span class="chip gold">🪙 <b id="hudCoins">۰</b></span>
+        <span class="chip" id="hudLives">❤️❤️❤️</span>
+      </div>
+      <div class="grp">
+        <button class="iconbtn" id="btnSound" title="صدا">🔊</button>
+        <button class="iconbtn" id="btnRestart" title="از اول">↻</button>
+        <button class="iconbtn" id="btnPause" title="توقف">⏸</button>
+      </div>
+    </div>
+
+    <!-- MENU -->
+    <div class="overlay show" id="menuScreen">
+      <div class="card">
+        <h2>🎱 خوش آمدی!</h2>
+        <div class="desc">نام و آواتار خودت را انتخاب کن تا رکوردهایت با نام تو ثبت شود.</div>
+        <div class="field">
+          <label>نام بازیکن</label>
+          <input id="nameInput" maxlength="20" placeholder="مثلاً: علی">
+        </div>
+        <div class="field">
+          <label>آواتار</label>
+          <div class="avatars" id="avatarBox"></div>
+        </div>
+        <div class="statsline" id="menuStats"></div>
+        <button class="btn" id="btnPlay">▶ شروع بازی</button>
+        <div class="btnrow">
+          <button class="btn violet" id="btnLevels">🗺 مراحل</button>
+          <button class="btn gold" id="btnRecords">🏆 رکوردها</button>
+        </div>
+        <div class="btnrow">
+          <button class="btn ghost" id="btnHelp">❓ راهنما</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEVELS -->
+    <div class="overlay" id="levelScreen">
+      <div class="card">
+        <h2>🗺 انتخاب مرحله</h2>
+        <div class="desc">مراحل را یکی‌یکی کامل کن تا مرحله بعدی باز شود.</div>
+        <div class="grid" id="levelGrid"></div>
+        <div class="btnrow"><button class="btn ghost" data-back="menuScreen">← بازگشت</button></div>
+      </div>
+    </div>
+
+    <!-- RECORDS -->
+    <div class="overlay" id="recordsScreen">
+      <div class="card">
+        <h2>🏆 رکوردها</h2>
+        <div class="desc">رکوردها روی همین دستگاه ذخیره می‌شوند.</div>
+        <div class="tabs">
+          <button data-tab="board" class="sel">جدول رکوردها</button>
+          <button data-tab="mine">رکوردهای من</button>
+          <button data-tab="stats">آمار کلی</button>
+        </div>
+        <div id="tabBody"></div>
+        <div class="btnrow">
+          <button class="btn gold" id="btnExport">⬇ خروجی JSON</button>
+          <button class="btn danger" id="btnClear">🗑 پاک کردن رکوردها</button>
+        </div>
+        <div class="btnrow"><button class="btn ghost" data-back="menuScreen">← بازگشت</button></div>
+      </div>
+    </div>
+
+    <!-- HELP -->
+    <div class="overlay" id="helpScreen">
+      <div class="card">
+        <h2>❓ راهنما</h2>
+        <div class="help-list">
+          🎯 گوی را به حلقه‌ی سبز برسان تا مرحله کامل شود.<br>
+          🪙 هر سکه <b style="color:var(--gold)">۱۰۰ امتیاز</b> دارد.<br>
+          🕳 اگر گوی داخل حفره بیفتد، یک جان از دست می‌دهی (۳ جان داری).<br>
+          💥 ضربه‌گیرهای بنفش گوی را با سرعت پرتاب می‌کنند.<br>
+          🟧 موانع نارنجی حرکت می‌کنند — مراقب باش!<br>
+          ⏱ هرچه سریع‌تر تمام کنی، پاداش زمانی بیشتری می‌گیری.<br><br>
+          <b>کنترل‌ها:</b><br>
+          <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> یا <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> — حرکت گوی<br>
+          📱 روی موبایل: انگشتت را روی صفحه بکش و نگه دار (جوی‌استیک مجازی)<br>
+          <kbd>P</kbd> یا <kbd>Esc</kbd> — توقف &nbsp;•&nbsp; <kbd>R</kbd> — از اول &nbsp;•&nbsp; <kbd>M</kbd> — بی‌صدا
+        </div>
+        <div class="btnrow"><button class="btn ghost" data-back="menuScreen">← بازگشت</button></div>
+      </div>
+    </div>
+
+    <!-- PAUSE -->
+    <div class="overlay" id="pauseScreen">
+      <div class="card" style="text-align:center">
+        <h2>⏸ توقف</h2>
+        <div class="desc" id="pauseInfo"></div>
+        <button class="btn" id="btnResume">▶ ادامه</button>
+        <div class="btnrow">
+          <button class="btn violet" id="btnPauseRestart">↻ از اول</button>
+          <button class="btn ghost" id="btnPauseMenu">🏠 منوی اصلی</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPLETE -->
+    <div class="overlay" id="completeScreen">
+      <div class="card" style="text-align:center">
+        <h2>🎉 آفرین!</h2>
+        <div class="desc" id="completeTitle"></div>
+        <div id="completeBadge"></div>
+        <div class="breakdown" id="completeBreak"></div>
+        <button class="btn gold" id="btnNext">مرحله بعد ⏭</button>
+        <div class="btnrow">
+          <button class="btn violet" id="btnReplay">↻ تکرار مرحله</button>
+          <button class="btn ghost" id="btnCompleteMenu">🏠 منو</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME OVER -->
+    <div class="overlay" id="gameoverScreen">
+      <div class="card" style="text-align:center">
+        <h2>💀 بازی تمام شد!</h2>
+        <div class="desc">همه جان‌هایت را از دست دادی. رکوردت ثبت شد، دوباره تلاش کن!</div>
+        <div class="breakdown" id="gameoverBreak"></div>
+        <button class="btn" id="btnRetry">↻ تلاش مجدد</button>
+        <div class="btnrow"><button class="btn ghost" id="btnOverMenu">🏠 منوی اصلی</button></div>
+      </div>
+    </div>
+
+  </div>
+  <div class="hint">
+    حرکت: <kbd>↑↓←→</kbd> / <kbd>WASD</kbd> یا کشیدن انگشت روی صفحه &nbsp;•&nbsp; <kbd>P</kbd> توقف &nbsp;•&nbsp; <kbd>R</kbd> از اول &nbsp;•&nbsp; <kbd>M</kbd> صدا
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+/* ============================================================
+   MARBLE MASTER — بازی ماربازی حرفه‌ای (تک‌فایل)
+   فیزیک اختصاصی + ۶ مرحله + سیستم کامل رکوردهای کاربر
+   ============================================================ */
+const W = 900, H = 600;
+const $ = id => document.getElementById(id);
+const fa = n => Number(n).toLocaleString('fa-IR');
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const dist = (x1,y1,x2,y2)=>Math.hypot(x2-x1,y2-y1);
+
+/* ---------------- مراحل بازی ---------------- */
+const LEVELS = [
+  { name:'شروع آسان', par:30, start:{x:70,y:300}, goal:{x:830,y:300,r:26},
+    walls:[{x:250,y:0,w:24,h:210},{x:250,y:390,w:24,h:210},{x:520,y:190,w:24,h:220}],
+    holes:[], bumpers:[], movers:[],
+    coins:[{x:150,y:140},{x:150,y:460},{x:385,y:300},{x:640,y:110},{x:640,y:490},{x:760,y:300}] },
+
+  { name:'پیچ و خم', par:40, start:{x:60,y:300}, goal:{x:840,y:300,r:26},
+    walls:[{x:150,y:130,w:260,h:20},{x:490,y:130,w:260,h:20},{x:150,y:450,w:260,h:20},{x:490,y:450,w:260,h:20},{x:440,y:170,w:20,h:110},{x:440,y:320,w:20,h:110}],
+    holes:[{x:450,y:300,r:22}], bumpers:[], movers:[],
+    coins:[{x:280,y:300},{x:620,y:300},{x:280,y:60},{x:620,y:60},{x:280,y:540},{x:620,y:540}] },
+
+  { name:'حفره‌های مرگ', par:45, start:{x:60,y:300}, goal:{x:840,y:300,r:26},
+    walls:[{x:300,y:190,w:20,h:220},{x:580,y:190,w:20,h:220}],
+    holes:[{x:200,y:140,r:24},{x:450,y:300,r:24},{x:700,y:140,r:24},{x:200,y:460,r:24},{x:700,y:460,r:24}],
+    bumpers:[], movers:[],
+    coins:[{x:450,y:110},{x:450,y:490},{x:120,y:140},{x:780,y:140},{x:120,y:460},{x:780,y:460},{x:560,y:300}] },
+
+  { name:'ضربه‌گیرها', par:45, start:{x:60,y:300}, goal:{x:840,y:300,r:26},
+    walls:[{x:250,y:292,w:110,h:16},{x:540,y:292,w:110,h:16}],
+    holes:[{x:450,y:110,r:22},{x:450,y:490,r:22}],
+    bumpers:[{x:300,y:180,r:20},{x:600,y:180,r:20},{x:450,y:300,r:20},{x:300,y:420,r:20},{x:600,y:420,r:20}],
+    movers:[],
+    coins:[{x:150,y:150},{x:750,y:150},{x:150,y:450},{x:750,y:450},{x:450,y:210},{x:450,y:390},{x:700,y:300}] },
+
+  { name:'موانع متحرک', par:50, start:{x:60,y:300}, goal:{x:840,y:300,r:26},
+    walls:[],
+    holes:[{x:450,y:300,r:20}],
+    bumpers:[],
+    movers:[
+      {x:280,y:90,w:20,h:130,axis:'y',amp:90,speed:1.3,phase:0},
+      {x:450,y:380,w:20,h:130,axis:'y',amp:90,speed:1.6,phase:1.5},
+      {x:620,y:90,w:20,h:130,axis:'y',amp:90,speed:1.3,phase:3},
+      {x:180,y:290,w:130,h:20,axis:'x',amp:90,speed:1.1,phase:0.7}],
+    coins:[{x:150,y:120},{x:150,y:480},{x:365,y:300},{x:540,y:300},{x:750,y:120},{x:750,y:480},{x:450,y:60},{x:450,y:540}] },
+
+  { name:'چالش نهایی', par:60, start:{x:60,y:540}, goal:{x:840,y:60,r:26},
+    walls:[{x:200,y:150,w:20,h:200},{x:420,y:250,w:20,h:200},{x:640,y:150,w:20,h:200}],
+    holes:[{x:310,y:120,r:22},{x:530,y:480,r:22},{x:450,y:300,r:22},{x:700,y:300,r:22}],
+    bumpers:[{x:310,y:300,r:20},{x:530,y:300,r:20},{x:450,y:80,r:20}],
+    movers:[
+      {x:200,y:420,w:120,h:20,axis:'x',amp:70,speed:1.4,phase:0},
+      {x:600,y:420,w:20,h:120,axis:'y',amp:60,speed:1.2,phase:2}],
+    coins:[{x:120,y:120},{x:310,y:480},{x:450,y:180},{x:650,y:480},{x:780,y:300},{x:450,y:540},{x:120,y:300},{x:780,y:120},{x:560,y:180},{x:340,y:360}] },
+];
+
+/* ---------------- ذخیره‌سازی رکوردها (localStorage) ---------------- */
+const LS = { profile:'mm_profile_v1', records:'mm_records_v1', progress:'mm_progress_v1', prefs:'mm_prefs_v1' };
+function load(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } }
+function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+let profile  = load(LS.profile,  { name:'بازیکن', avatar:'🎱' });
+let records  = load(LS.records,  []);                                   // [{name,avatar,level,levelName,score,time,coins,date}]
+let progress = load(LS.progress, { unlocked:1, completed:{}, stats:{games:0,totalCoins:0,totalScore:0} });
+let prefs    = load(LS.prefs,    { sound:true });
+const saveProfile  = ()=>save(LS.profile, profile);
+const saveRecords  = ()=>save(LS.records, records);
+const saveProgress = ()=>save(LS.progress, progress);
+const savePrefs    = ()=>save(LS.prefs, prefs);
+
+/* ---------------- صدا (Web Audio — بدون فایل خارجی) ---------------- */
+let AC = null;
+function ac(){ if(!AC){ try{ AC = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+  if(AC && AC.state==='suspended') AC.resume(); return AC; }
+function beep(freq, dur, type, vol, slideTo){
+  if(!prefs.sound) return;
+  const a = ac(); if(!a) return;
+  try{
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type||'sine'; o.frequency.setValueAtTime(freq, a.currentTime);
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, a.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.12, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, a.currentTime+dur);
+    o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime+dur);
+  }catch(e){}
+}
+const sfx = {
+  click : ()=>beep(600,.06,'square',.05),
+  coin  : ()=>{ beep(880,.08,'sine',.12); setTimeout(()=>beep(1320,.12,'sine',.12),60); },
+  bounce: ()=>beep(180,.05,'triangle',.06),
+  bumper: ()=>beep(300,.18,'sawtooth',.12,900),
+  fall  : ()=>beep(500,.45,'sine',.14,60),
+  win   : ()=>{ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,.22,'triangle',.14),i*110)); },
+  over  : ()=>{ [400,320,240,160].forEach((f,i)=>setTimeout(()=>beep(f,.25,'sawtooth',.1),i*140)); },
+  record: ()=>{ [784,988,1175].forEach((f,i)=>setTimeout(()=>beep(f,.18,'sine',.12),i*90)); },
+};
+
+/* ---------------- وضعیت بازی ---------------- */
+const canvas = $('game'), ctx = canvas.getContext('2d');
+const DPR = Math.min(window.devicePixelRatio||1, 2);
+canvas.width = W*DPR; canvas.height = H*DPR;
+ctx.setTransform(DPR,0,0,DPR,0,0);
+
+const ACCEL = 1500, REST = 0.72, MAXV = 540, BUMP = 640;
+let G = null;            // وضعیت اجرای فعلی
+let particles = [], floaters = [];
+let keys = {}, joy = { active:false, id:null, ox:0, oy:0, dx:0, dy:0 };
+let wallSfxCd = 0, globalT = 0;
+
+function newRun(levelIdx){
+  const L = LEVELS[levelIdx];
+  G = {
+    level: levelIdx, data: L,
+    ball: { x:L.start.x, y:L.start.y, vx:0, vy:0, r:16, angle:0, scale:1 },
+    lives:3, coins:0, taken:new Set(), time:0,
+    state:'playing', fallT:0, fallHole:null, trail:[], shake:0, intro:2.2,
+  };
+  particles = []; floaters = [];
+  progress.stats.games++; saveProgress();
+  toast(`🎯 مرحله ${fa(levelIdx+1)}: ${L.name}`);
+}
+function respawn(){
+  const L = G.data;
+  G.ball = { x:L.start.x, y:L.start.y, vx:0, vy:0, r:16, angle:0, scale:1 };
+  G.state = 'playing'; G.trail = [];
+}
+
+/* ---------------- فیزیک ---------------- */
+function circleRect(b, r, mvx, mvy){
+  const cx = clamp(b.x, r.x, r.x+r.w), cy = clamp(b.y, r.y, r.y+r.h);
+  let dx = b.x-cx, dy = b.y-cy, d = Math.hypot(dx,dy);
+  if(d < b.r){
+    if(d === 0){ dx = 0; dy = -1; d = 1; }
+    const nx = dx/d, ny = dy/d;
+    b.x = cx + nx*b.r; b.y = cy + ny*b.r;
+    const vn = b.vx*nx + b.vy*ny;
+    if(vn < 0){
+      b.vx -= (1+REST)*vn*nx; b.vy -= (1+REST)*vn*ny;
+      if(mvx) { b.vx += mvx; b.vy += mvy; }
+      wallHit(Math.abs(vn));
+    }
+  }
+}
+function wallHit(spd){
+  if(spd > 90 && wallSfxCd <= 0){ sfx.bounce(); wallSfxCd = 0.09; burst(G.ball.x, G.ball.y, 3, '#9fb3d9', 90, .3); }
+}
+function collide(b){
+  if(b.x < b.r){ b.x = b.r; b.vx = Math.abs(b.vx)*REST; wallHit(Math.abs(b.vx)); }
+  if(b.x > W-b.r){ b.x = W-b.r; b.vx = -Math.abs(b.vx)*REST; wallHit(Math.abs(b.vx)); }
+  if(b.y < b.r){ b.y = b.r; b.vy = Math.abs(b.vy)*REST; wallHit(Math.abs(b.vy)); }
+  if(b.y > H-b.r){ b.y = H-b.r; b.vy = -Math.abs(b.vy)*REST; wallHit(Math.abs(b.vy)); }
+  for(const w of G.data.walls) circleRect(b, w);
+  for(const m of G.movers) circleRect(b, m, m.vx, m.vy);
+  for(const bp of G.data.bumpers){
+    const d = dist(b.x,b.y,bp.x,bp.y);
+    if(d < b.r + bp.r && d > 0){
+      const nx = (b.x-bp.x)/d, ny = (b.y-bp.y)/d;
+      b.x = bp.x + nx*(b.r+bp.r); b.y = bp.y + ny*(b.r+bp.r);
+      b.vx = nx*BUMP; b.vy = ny*BUMP;
+      bp.flash = 1; G.shake = Math.min(G.shake+7, 12);
+      sfx.bumper(); burst(bp.x, bp.y, 16, '#e05cff', 260, .5);
+    }
+  }
+}
+function inputVec(){
+  let x = 0, y = 0;
+  if(keys['arrowleft']||keys['a']) x -= 1;
+  if(keys['arrowright']||keys['d']) x += 1;
+  if(keys['arrowup']||keys['w']) y -= 1;
+  if(keys['arrowdown']||keys['s']) y += 1;
+  if(joy.active && (Math.abs(joy.dx) > .12 || Math.abs(joy.dy) > .12)){ x = joy.dx; y = joy.dy; }
+  const m = Math.hypot(x,y);
+  if(m > 1){ x/=m; y/=m; }
+  return {x, y};
+}
+function update(dt){
+  const b = G.ball;
+  G.time += dt;
+  if(G.intro > 0) G.intro -= dt;
+  if(wallSfxCd > 0) wallSfxCd -= dt;
+
+  const iv = inputVec();
+  b.vx += iv.x*ACCEL*dt; b.vy += iv.y*ACCEL*dt;
+  const damp = Math.exp(-1.55*dt);
+  b.vx *= damp; b.vy *= damp;
+  const sp = Math.hypot(b.vx, b.vy);
+  if(sp > MAXV){ b.vx = b.vx/sp*MAXV; b.vy = b.vy/sp*MAXV; }
+
+  const steps = 4, sdt = dt/steps;
+  for(let i=0;i<steps;i++){ b.x += b.vx*sdt; b.y += b.vy*sdt; collide(b); }
+  b.angle += sp*dt/ b.r;
+
+  // کشش حفره‌ها
+  for(const h of G.data.holes){
+    const d = dist(b.x,b.y,h.x,h.y);
+    if(d < h.r + 20 && d > 1){
+      const pull = 1100*(1 - d/(h.r+20));
+      b.vx += (h.x-b.x)/d*pull*dt; b.vy += (h.y-b.y)/d*pull*dt;
+    }
+    if(d < h.r - 3){ startFall(h); return; }
+  }
+  // سکه‌ها
+  G.data.coins.forEach((c,i)=>{
+    if(!G.taken.has(i) && dist(b.x,b.y,c.x,c.y) < b.r + 13){
+      G.taken.add(i); G.coins++;
+      sfx.coin(); burst(c.x, c.y, 12, '#ffd34d', 200, .5);
+      floaters.push({x:c.x, y:c.y-16, t:0, txt:'+۱۰۰'});
+    }
+  });
+  // مقصد
+  const gl = G.data.goal;
+  if(dist(b.x,b.y,gl.x,gl.y) < gl.r) completeLevel();
+}
+function updateFall(dt){
+  const b = G.ball, h = G.fallHole;
+  G.fallT += dt;
+  const k = Math.min(G.fallT/0.45, 1);
+  b.x += (h.x-b.x)*0.35; b.y += (h.y-b.y)*0.35;
+  b.scale = 1-k;
+  if(k >= 1){
+    G.lives--; updateHUD();
+    if(G.lives <= 0){ gameOver(); }
+    else { toast('🕳 افتادی! یک جان از دست دادی'); respawn(); }
+  }
+}
+function updateMovers(dt){
+  if(!G) return;
+  if(!G.movers){
+    G.movers = G.data.movers.map(m => ({...m, bx:m.x, by:m.y, t:Math.random()*6, vx:0, vy:0}));
+  }
+  for(const m of G.movers){
+    m.t += dt;
+    const off = Math.sin(m.t*m.speed + m.phase)*m.amp;
+    const nx = m.bx + (m.axis==='x' ? off : 0);
+    const ny = m.by + (m.axis==='y' ? off : 0);
+    m.vx = (nx-m.x)/Math.max(dt,0.001); m.vy = (ny-m.y)/Math.max(dt,0.001);
+    m.x = nx; m.y = ny;
+  }
+}
+function burst(x,y,n,color,speed,life){
+  for(let i=0;i<n;i++){
+    const a = Math.random()*Math.PI*2, s = speed*(0.4+Math.random()*0.8);
+    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,t:0,life:life*(0.6+Math.random()*0.7),color,r:2+Math.random()*3});
+  }
+}
+
+/* ---------------- پایان مرحله / ثبت رکورد ---------------- */
+function completeLevel(){
+  const L = G.data;
+  const coinScore = G.coins*100;
+  const timeBonus = Math.max(0, Math.round((L.par - G.time)*20));
+  const total = 500 + coinScore + timeBonus;
+  G.state = 'complete';
+  sfx.win();
+  burst(G.data.goal.x, G.data.goal.y, 70, '#3dff9e', 320, 1.1);
+  burst(G.data.goal.x, G.data.goal.y, 40, '#ffd34d', 260, 1.2);
+
+  // ثبت رکورد کاربر
+  const rec = { name:profile.name, avatar:profile.avatar, level:G.level, levelName:L.name,
+                score:total, time:Math.round(G.time), coins:G.coins, date:Date.now() };
+  records.push(rec);
+  records.sort((a,b)=>b.score-a.score);
+  records = records.slice(0,50);
+  saveRecords();
+
+  const prev = progress.completed[G.level];
+  const isBest = !prev || total > prev.bestScore;
+  progress.completed[G.level] = {
+    bestScore: Math.max(prev?prev.bestScore:0, total),
+    bestTime : prev ? Math.min(prev.bestTime, Math.round(G.time)) : Math.round(G.time),
+    plays    : (prev?prev.plays:0)+1,
+  };
+  progress.unlocked = Math.max(progress.unlocked, Math.min(LEVELS.length, G.level+2));
+  progress.stats.totalCoins += G.coins;
+  progress.stats.totalScore += total;
+  saveProgress();
+  if(isBest) setTimeout(()=>sfx.record(), 350);
+
+  $('completeTitle').textContent = `مرحله ${fa(G.level+1)} «${L.name}» کامل شد!`;
+  $('completeBadge').innerHTML = isBest ? '<span class="badge">🏆 رکورد جدید!</span>' : '';
+  $('completeBreak').innerHTML =
+    `<div><span>🪙 سکه‌ها (${fa(G.coins)} عدد)</span><b>${fa(coinScore)}</b></div>
+     <div><span>⏱ پاداش سرعت (هدف: ${fa(L.par)} ثانیه)</span><b>${fa(timeBonus)}</b></div>
+     <div><span>🎯 پاداش اتمام مرحله</span><b>${fa(500)}</b></div>
+     <div><span>⏱ زمان تو</span><b>${fa(Math.round(G.time))} ثانیه</b></div>
+     <div class="tot"><span>امتیاز نهایی</span><b>${fa(total)}</b></div>`;
+  $('btnNext').style.display = (G.level+1 < LEVELS.length) ? '' : 'none';
+  setTimeout(()=>show('completeScreen'), 650);
+}
+function gameOver(){
+  G.state = 'gameover';
+  sfx.over();
+  const score = G.coins*100;
+  records.push({ name:profile.name, avatar:profile.avatar, level:G.level, levelName:G.data.name,
+                 score, time:Math.round(G.time), coins:G.coins, date:Date.now(), failed:true });
+  records.sort((a,b)=>b.score-a.score); records = records.slice(0,50); saveRecords();
+  progress.stats.totalCoins += G.coins; saveProgress();
+  $('gameoverBreak').innerHTML =
+    `<div><span>🪙 سکه‌های جمع‌شده</span><b>${fa(G.coins)}</b></div>
+     <div><span>⏱ زمان بازی</span><b>${fa(Math.round(G.time))} ثانیه</b></div>
+     <div class="tot"><span>امتیاز</span><b>${fa(score)}</b></div>`;
+  setTimeout(()=>show('gameoverScreen'), 500);
+}
+
+/* ---------------- رسم ---------------- */
+function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  // پس‌زمینه
+  const bg = ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0,'#101737'); bg.addColorStop(1,'#0a0f28');
+  ctx.fillStyle = bg; ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = 'rgba(120,150,255,.06)'; ctx.lineWidth = 1;
+  for(let x=0;x<=W;x+=45){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for(let y=0;y<=H;y+=45){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  if(!G) return;
+  const L = G.data, b = G.ball;
+  ctx.save();
+  if(G.shake > 0.2){ ctx.translate((Math.random()-.5)*G.shake, (Math.random()-.5)*G.shake); G.shake *= 0.88; }
+
+  // حفره‌ها
+  for(const h of L.holes){
+    const pulse = 1 + Math.sin(globalT*3 + h.x)*0.04;
+    ctx.beginPath(); ctx.arc(h.x,h.y,h.r*pulse,0,7);
+    ctx.fillStyle = '#05070f'; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,93,122,.75)';
+    ctx.shadowColor = '#ff5d7a'; ctx.shadowBlur = 12; ctx.stroke(); ctx.shadowBlur = 0;
+    ctx.beginPath(); ctx.arc(h.x,h.y,h.r*0.55,0,7);
+    ctx.fillStyle = 'rgba(0,0,0,.9)'; ctx.fill();
+  }
+  // مقصد
+  const gl = L.goal, gp = 1 + Math.sin(globalT*4)*0.08;
+  ctx.beginPath(); ctx.arc(gl.x,gl.y,gl.r*gp,0,7);
+  ctx.fillStyle = 'rgba(61,255,158,.14)'; ctx.fill();
+  ctx.lineWidth = 4; ctx.strokeStyle = '#3dff9e';
+  ctx.shadowColor = '#3dff9e'; ctx.shadowBlur = 18; ctx.stroke(); ctx.shadowBlur = 0;
+  ctx.font = `${gl.r}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('★', gl.x, gl.y+1);
+  // سکه‌ها
+  L.coins.forEach((c,i)=>{
+    if(G.taken.has(i)) return;
+    const bob = Math.sin(globalT*3 + i*1.3)*3, sq = Math.abs(Math.cos(globalT*2.4 + i));
+    ctx.save(); ctx.translate(c.x, c.y+bob); ctx.scale(0.35+0.65*sq, 1);
+    ctx.beginPath(); ctx.arc(0,0,11,0,7);
+    ctx.fillStyle = '#ffd34d'; ctx.shadowColor='#ffd34d'; ctx.shadowBlur=12; ctx.fill(); ctx.shadowBlur=0;
+    ctx.lineWidth = 2.5; ctx.strokeStyle = '#c9930a'; ctx.stroke();
+    ctx.beginPath(); ctx.arc(0,0,6,0,7); ctx.strokeStyle='rgba(160,110,0,.7)'; ctx.stroke();
+    ctx.restore();
+  });
+  // ضربه‌گیرها
+  for(const bp of L.bumpers){
+    bp.flash = Math.max(0,(bp.flash||0)-0.03);
+    ctx.beginPath(); ctx.arc(bp.x,bp.y,bp.r,0,7);
+    ctx.fillStyle = bp.flash>0.4 ? '#f2c6ff' : '#a93fe0';
+    ctx.shadowColor = '#e05cff'; ctx.shadowBlur = 16; ctx.fill(); ctx.shadowBlur = 0;
+    ctx.lineWidth = 3; ctx.strokeStyle = '#e05cff'; ctx.stroke();
+    ctx.beginPath(); ctx.arc(bp.x,bp.y,bp.r*0.5,0,7); ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.stroke();
+  }
+  // دیوارها
+  for(const w of L.walls){
+    const g = ctx.createLinearGradient(w.x,w.y,w.x,w.y+w.h);
+    g.addColorStop(0,'#3a4c8f'); g.addColorStop(1,'#232f5e');
+    rr(w.x,w.y,w.w,w.h,6); ctx.fillStyle = g; ctx.fill();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(140,170,255,.55)'; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.14)'; rr(w.x+2,w.y+2,w.w-4,4,2); ctx.fill();
+  }
+  // موانع متحرک
+  if(G.movers) for(const m of G.movers){
+    const g = ctx.createLinearGradient(m.x,m.y,m.x+m.w,m.y+m.h);
+    g.addColorStop(0,'#ff9a3d'); g.addColorStop(1,'#e05a1f');
+    rr(m.x,m.y,m.w,m.h,6); ctx.fillStyle = g; ctx.fill();
+    ctx.save(); rr(m.x,m.y,m.w,m.h,6); ctx.clip();
+    ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.lineWidth = 5;
+    for(let i=-m.h;i<m.w+m.h;i+=16){ ctx.beginPath(); ctx.moveTo(m.x+i,m.y+m.h); ctx.lineTo(m.x+i+m.h,m.y); ctx.stroke(); }
+    ctx.restore();
+    ctx.lineWidth = 1.5; ctx.strokeStyle = 'rgba(255,200,150,.7)'; rr(m.x,m.y,m.w,m.h,6); ctx.stroke();
+  }
+  // رد گوی
+  G.trail.push({x:b.x,y:b.y});
+  if(G.trail.length > 14) G.trail.shift();
+  G.trail.forEach((p,i)=>{
+    ctx.beginPath(); ctx.arc(p.x,p.y,b.r*(i/G.trail.length)*0.8,0,7);
+    ctx.fillStyle = `rgba(56,225,255,${(i/G.trail.length)*0.16})`; ctx.fill();
+  });
+  // گوی
+  if(b.scale > 0.05){
+    const r = b.r*b.scale;
+    ctx.beginPath(); ctx.ellipse(b.x,b.y+r*0.9,r*0.95,r*0.35,0,0,7);
+    ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fill();
+    const g = ctx.createRadialGradient(b.x-r*0.35,b.y-r*0.4,r*0.15,b.x,b.y,r);
+    g.addColorStop(0,'#e8fbff'); g.addColorStop(0.35,'#5fe3ff'); g.addColorStop(0.8,'#1e9bff'); g.addColorStop(1,'#0b5fd9');
+    ctx.beginPath(); ctx.arc(b.x,b.y,r,0,7); ctx.fillStyle = g;
+    ctx.shadowColor = '#38e1ff'; ctx.shadowBlur = 20; ctx.fill(); ctx.shadowBlur = 0;
+    // خطوط چرخش
+    ctx.save(); ctx.beginPath(); ctx.arc(b.x,b.y,r,0,7); ctx.clip();
+    ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 2;
+    for(let i=0;i<3;i++){
+      const a = b.angle + i*(Math.PI*2/3);
+      ctx.beginPath(); ctx.moveTo(b.x+Math.cos(a)*r, b.y+Math.sin(a)*r);
+      ctx.lineTo(b.x-Math.cos(a)*r, b.y-Math.sin(a)*r); ctx.stroke();
+    }
+    ctx.restore();
+    ctx.beginPath(); ctx.arc(b.x-r*0.38,b.y-r*0.42,r*0.22,0,7);
+    ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fill();
+  }
+  // ذرات
+  particles = particles.filter(p=>p.t < p.life);
+  for(const p of particles){
+    p.t += 0.016; p.x += p.vx*0.016; p.y += p.vy*0.016; p.vx *= 0.96; p.vy *= 0.96;
+    ctx.globalAlpha = 1 - p.t/p.life;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,7); ctx.fillStyle = p.color; ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  // متن‌های شناور
+  floaters = floaters.filter(f=>f.t < 1);
+  ctx.font = 'bold 17px Vazirmatn, Tahoma'; ctx.textAlign='center';
+  for(const f of floaters){
+    f.t += 0.02; f.y -= 0.7;
+    ctx.globalAlpha = 1-f.t;
+    ctx.fillStyle = '#ffd34d'; ctx.fillText(f.txt, f.x, f.y);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // جوی‌استیک مجازی
+  if(joy.active){
+    ctx.beginPath(); ctx.arc(joy.ox,joy.oy,46,0,7);
+    ctx.fillStyle = 'rgba(120,150,255,.12)'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(120,150,255,.5)'; ctx.stroke();
+    ctx.beginPath(); ctx.arc(joy.ox+joy.dx*40, joy.oy+joy.dy*40, 20, 0, 7);
+    ctx.fillStyle = 'rgba(56,225,255,.45)'; ctx.fill();
+  }
+  // بنر شروع مرحله
+  if(G.intro > 0 && G.state==='playing'){
+    ctx.globalAlpha = Math.min(1, G.intro);
+    ctx.font = '900 34px Vazirmatn, Tahoma'; ctx.textAlign='center';
+    ctx.fillStyle = '#eaf2ff'; ctx.shadowColor='#38e1ff'; ctx.shadowBlur=16;
+    ctx.fillText(`مرحله ${fa(G.level+1)}: ${L.name}`, W/2, H/2 - 10);
+    ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+  }
+  // وینیت
+  const vg = ctx.createRadialGradient(W/2,H/2,H*0.45,W/2,H/2,H*0.95);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,.35)');
+  ctx.fillStyle = vg; ctx.fillRect(0,0,W,H);
+}
+
+/* ---------------- حلقه بازی ---------------- */
+let lastT = performance.now();
+function loop(now){
+  const dt = Math.min((now-lastT)/1000, 0.033); lastT = now;
+  globalT += dt;
+  if(G){
+    updateMovers(dt);
+    if(G.state === 'playing') update(dt);
+    else if(G.state === 'falling') updateFall(dt);
+    if(G.state === 'playing' || G.state === 'falling') updateHUD();
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+/* ---------------- HUD و صفحات ---------------- */
+function fmtTime(s){ const m = Math.floor(s/60), ss = Math.floor(s%60);
+  return `${fa(m)}:${fa(String(ss).padStart(2,'0'))}`; }
+function updateHUD(){
+  if(!G) return;
+  $('hudLevel').textContent = `مرحله ${fa(G.level+1)}: ${G.data.name}`;
+  $('hudTime').textContent = fmtTime(G.time);
+  $('hudScore').textContent = fa(G.coins*100);
+  $('hudCoins').textContent = fa(G.coins);
+  $('hudLives').textContent = '❤️'.repeat(Math.max(0,G.lives)) + '🖤'.repeat(Math.max(0,3-G.lives));
+}
+const SCREENS = ['menuScreen','levelScreen','recordsScreen','helpScreen','pauseScreen','completeScreen','gameoverScreen'];
+function show(id){ SCREENS.forEach(s=>$(s).classList.toggle('show', s===id)); $('hud').style.display = (id===null||id==='pauseScreen') ? 'flex':'none'; }
+function hideAll(){ show(null); }
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+function startLevel(i){
+  if(i >= progress.unlocked){ toast('🔒 این مرحله هنوز باز نشده!'); return; }
+  ac(); sfx.click();
+  newRun(i); hideAll(); updateHUD();
+}
+function toMenu(){
+  sfx.click();
+  if(G && (G.state==='playing'||G.state==='falling'||G.state==='paused')) G.state = 'menu';
+  renderMenuStats(); show('menuScreen');
+}
+function pauseGame(){
+  if(!G || G.state!=='playing') return;
+  G.state = 'paused';
+  $('pauseInfo').textContent = `مرحله ${fa(G.level+1)} «${G.data.name}» — زمان: ${fmtTime(G.time)} — امتیاز: ${fa(G.coins*100)}`;
+  show('pauseScreen');
+}
+function resumeGame(){ if(G && G.state==='paused'){ G.state='playing'; hideAll(); } }
+
+/* ---------------- منو / مراحل / رکوردها ---------------- */
+const AVATARS = ['🎱','🔴','🔵','🟢','🟡','🟣','⚪','⭐'];
+function renderAvatars(){
+  $('avatarBox').innerHTML = AVATARS.map(a=>`<button data-a="${a}" class="${a===profile.avatar?'sel':''}">${a}</button>`).join('');
+  $('avatarBox').querySelectorAll('button').forEach(btn=>btn.onclick = ()=>{
+    profile.avatar = btn.dataset.a; saveProfile(); renderAvatars(); sfx.click();
+  });
+}
+function renderMenuStats(){
+  $('nameInput').value = profile.name;
+  const done = Object.keys(progress.completed).length;
+  const best = Math.max(0, ...records.filter(r=>!r.failed).map(r=>r.score));
+  $('menuStats').innerHTML =
+    `<span>🏆 بهترین امتیاز: <b>${fa(best)}</b></span>
+     <span>🗺 مراحل کامل‌شده: <b>${fa(done)}/${fa(LEVELS.length)}</b></span>
+     <span>🎮 بازی‌ها: <b>${fa(progress.stats.games)}</b></span>`;
+}
+function renderLevels(){
+  $('levelGrid').innerHTML = LEVELS.map((L,i)=>{
+    const locked = i >= progress.unlocked;
+    const c = progress.completed[i];
+    return `<div class="lvl ${locked?'locked':''}" data-i="${i}">
+      ${locked?'<span class="lock">🔒</span>':(c?'<span class="done">✔</span>':'')}
+      <div class="num">${fa(i+1)}</div><div class="nm">${L.name}</div>
+      <div class="meta">${locked?'قفل است':(c?`⭐ بهترین: <b>${fa(c.bestScore)}</b><br>⏱ ${fa(c.bestTime)} ثانیه`:`هدف: ${fa(L.par)} ثانیه`)}<br>🪙 ${fa(L.coins.length)} سکه</div>
+    </div>`;
+  }).join('');
+  $('levelGrid').querySelectorAll('.lvl').forEach(el=>el.onclick = ()=>startLevel(+el.dataset.i));
+}
+let curTab = 'board';
+function renderRecords(){
+  const body = $('tabBody');
+  if(curTab === 'board'){
+    const top = records.filter(r=>!r.failed).slice(0,10);
+    body.innerHTML = top.length ? `<table><tr><th>#</th><th>بازیکن</th><th>مرحله</th><th>امتیاز</th><th>زمان</th><th>تاریخ</th></tr>${
+      top.map((r,i)=>`<tr class="${r.name===profile.name?'me':''}"><td class="rank">${fa(i+1)}</td><td>${r.avatar} ${r.name}</td><td>${fa(r.level+1)} — ${r.levelName}</td><td><b>${fa(r.score)}</b></td><td>${fa(r.time)} ث</td><td>${new Date(r.date).toLocaleDateString('fa-IR')}</td></tr>`).join('')
+    }</table>` : '<div class="empty">هنوز رکوردی ثبت نشده — اولین نفر باش! 🎱</div>';
+  } else if(curTab === 'mine'){
+    const mine = records.filter(r=>r.name===profile.name).slice().sort((a,b)=>b.date-a.date).slice(0,15);
+    body.innerHTML = mine.length ? `<table><tr><th>مرحله</th><th>امتیاز</th><th>سکه</th><th>زمان</th><th>نتیجه</th><th>تاریخ</th></tr>${
+      mine.map(r=>`<tr><td>${fa(r.level+1)} — ${r.levelName}</td><td><b>${fa(r.score)}</b></td><td>${fa(r.coins)}</td><td>${fa(r.time)} ث</td><td>${r.failed?'❌ باخت':'✅ برد'}</td><td>${new Date(r.date).toLocaleDateString('fa-IR')}</td></tr>`).join('')
+    }</table>` : '<div class="empty">هنوز بازی نکردی. بزن بریم! ▶</div>';
+  } else {
+    const wins = records.filter(r=>!r.failed).length;
+    const best = Math.max(0, ...records.filter(r=>!r.failed).map(r=>r.score));
+    const done = Object.keys(progress.completed).length;
+    const winRate = records.length ? Math.round(wins/records.length*100) : 0;
+    body.innerHTML = `<div class="statgrid">
+      <div class="stat"><div class="v">${fa(progress.stats.games)}</div><div class="k">🎮 بازی‌های انجام‌شده</div></div>
+      <div class="stat"><div class="v">${fa(progress.stats.totalCoins)}</div><div class="k">🪙 مجموع سکه‌ها</div></div>
+      <div class="stat"><div class="v">${fa(progress.stats.totalScore)}</div><div class="k">⭐ مجموع امتیازها</div></div>
+      <div class="stat"><div class="v">${fa(best)}</div><div class="k">🏆 بهترین امتیاز</div></div>
+      <div class="stat"><div class="v">${fa(done)}/${fa(LEVELS.length)}</div><div class="k">🗺 مراحل کامل‌شده</div></div>
+      <div class="stat"><div class="v">${fa(winRate)}٪</div><div class="k">📈 نرخ برد</div></div>
+    </div>`;
+  }
+}
+
+/* ---------------- رویدادها ---------------- */
+$('nameInput').addEventListener('input', e=>{
+  profile.name = e.target.value.trim() || 'بازیکن'; saveProfile();
+});
+$('btnPlay').onclick = ()=>startLevel(0);
+$('btnLevels').onclick = ()=>{ sfx.click(); renderLevels(); show('levelScreen'); };
+$('btnRecords').onclick = ()=>{ sfx.click(); renderRecords(); show('recordsScreen'); };
+$('btnHelp').onclick = ()=>{ sfx.click(); show('helpScreen'); };
+document.querySelectorAll('[data-back]').forEach(b=>b.onclick = ()=>{ sfx.click(); renderMenuStats(); show(b.dataset.back); });
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick = ()=>{
+  curTab = b.dataset.tab;
+  document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('sel', x===b));
+  renderRecords(); sfx.click();
+});
+$('btnExport').onclick = ()=>{
+  const data = JSON.stringify({ profile, records, progress, exportedAt:new Date().toISOString() }, null, 2);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([data], {type:'application/json'}));
+  a.download = 'marble-master-records.json'; a.click();
+  URL.revokeObjectURL(a.href); toast('⬇ رکوردها خروجی گرفته شد');
+};
+$('btnClear').onclick = ()=>{
+  if(!confirm('همه رکوردها و پیشرفت پاک شود؟ این کار قابل بازگشت نیست!')) return;
+  records = []; progress = { unlocked:1, completed:{}, stats:{games:0,totalCoins:0,totalScore:0} };
+  saveRecords(); saveProgress(); renderRecords(); renderMenuStats();
+  toast('🗑 رکوردها پاک شدند');
+};
+$('btnPause').onclick = pauseGame;
+$('btnResume').onclick = resumeGame;
+$('btnPauseRestart').onclick = ()=>{ sfx.click(); newRun(G.level); hideAll(); updateHUD(); };
+$('btnPauseMenu').onclick = toMenu;
+$('btnRestart').onclick = ()=>{ if(G){ sfx.click(); newRun(G.level); hideAll(); updateHUD(); } };
+$('btnNext').onclick = ()=>startLevel(G.level+1);
+$('btnReplay').onclick = ()=>startLevel(G.level);
+$('btnCompleteMenu').onclick = toMenu;
+$('btnRetry').onclick = ()=>startLevel(G.level);
+$('btnOverMenu').onclick = toMenu;
+$('btnSound').onclick = ()=>{
+  prefs.sound = !prefs.sound; savePrefs(); syncSoundBtn(); if(prefs.sound) sfx.click();
+};
+function syncSoundBtn(){ $('btnSound').textContent = prefs.sound ? '🔊' : '🔇'; }
+syncSoundBtn();
+
+/* کیبورد */
+window.addEventListener('keydown', e=>{
+  const k = e.key.toLowerCase();
+  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)) e.preventDefault();
+  keys[k] = true;
+  if(k==='p' || k==='escape'){ if(G && G.state==='playing') pauseGame(); else if(G && G.state==='paused') resumeGame(); }
+  if(k==='r' && G && (G.state==='playing'||G.state==='paused')){ newRun(G.level); hideAll(); updateHUD(); }
+  if(k==='m'){ prefs.sound = !prefs.sound; savePrefs(); syncSoundBtn(); }
+});
+window.addEventListener('keyup', e=>{ keys[e.key.toLowerCase()] = false; });
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) pauseGame(); });
+
+/* جوی‌استیک مجازی (ماوس / لمسی) */
+function toGame(e){
+  const r = canvas.getBoundingClientRect();
+  return { x:(e.clientX-r.left)/r.width*W, y:(e.clientY-r.top)/r.height*H };
+}
+canvas.addEventListener('pointerdown', e=>{
+  if(!G || G.state!=='playing') return;
+  const p = toGame(e);
+  joy = { active:true, id:e.pointerId, ox:p.x, oy:p.y, dx:0, dy:0 };
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', e=>{
+  if(!joy.active || e.pointerId!==joy.id) return;
+  const p = toGame(e);
+  let dx = (p.x-joy.ox)/46, dy = (p.y-joy.oy)/46;
+  const m = Math.hypot(dx,dy);
+  if(m > 1){ dx/=m; dy/=m; }
+  joy.dx = dx; joy.dy = dy;
+});
+const joyEnd = e=>{ if(e.pointerId===joy.id) joy.active = false; };
+canvas.addEventListener('pointerup', joyEnd);
+canvas.addEventListener('pointercancel', joyEnd);
+
+/* ---------------- راه‌اندازی ---------------- */
+renderAvatars();
+renderMenuStats();
+newRun(0);            // صحنه پس‌زمینه منو
+G.state = 'menu';
+show('menuScreen');
+</script>
+</body>
+</html>
